@@ -33,6 +33,9 @@ function getWeb3(opts={}) {
 }
 
 async function resolve(name, opts={}) {
+	if (ethjs.isValidAddress(name))
+		return ethjs.toChecksumAddress(name);
+		
 	const web3 = getWeb3(opts)
 	const node = hash(name);
 	const chainId = await web3.eth.net.getId();
