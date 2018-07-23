@@ -1,6 +1,6 @@
 {
 	"name": "ez-ens",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Simple, zero-configuration Ethereum Name Service resolver.",
 	"main": "src/index.js",
 	"repository": {
@@ -28,6 +28,8 @@
 		"es2017",
 		"ens",
 		"simple",
-		"easy"
+		"easy",
+		"zero-conf",
+		"zero configuration"
 	]
 }
