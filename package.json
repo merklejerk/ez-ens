@@ -1,0 +1,33 @@
+{
+	"name": "ez-ens",
+	"version": "1.0.0",
+	"description": "Simple, zero-configuration Ethereum Name Service resolver.",
+	"main": "src/index.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/cluracan/ez-ens.git"
+	},
+	"bugs": {
+		"url": "https://github.com/cluracan/ez-ens/issues"
+	},
+	"author": "Lawrence Forman <not.larry@klv.io>",
+	"license": "Apache-2.0",
+	"dependencies": {
+		"create-web3-provider": "^1.0.0",
+		"ethereumjs-util": "^5.2.0",
+		"lodash": "^4.17.10",
+		"web3": "^1.0.0-beta.34"
+	},
+	"keywords": [
+		"ethereum",
+		"web3",
+		"library",
+		"async",
+		"promise",
+		"await",
+		"es2017",
+		"ens",
+		"simple",
+		"easy"
+	]
+}
