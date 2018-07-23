@@ -1,7 +1,16 @@
+![npm package](https://badge.fury.io/js/ez-ens.svg)
+
 # ez-ens
 Simple, zero-configuration Ethereum Name Service resolver with promises.
 
 Works on main, ropsten, and rinkeby Ethereum networks.
+
+## Installation
+```bash
+npm install ez-ens
+# or
+yarn install ez-ens
+```
 
 ## Sample Usage
 ```js
@@ -37,6 +46,8 @@ ens.resolve({
 	provider: Object,
 	// Custom Web3 instance to use. Lightest option if making lots of calls.
 	web3: Object,
+	// Custom infura API key, if not using a custom provider URI or provider.
+	infuraKey: String
 });
 ```
 
