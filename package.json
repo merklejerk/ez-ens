@@ -1,7 +1,7 @@
 {
 	"name": "ez-ens",
-	"version": "1.0.3",
-	"description": "Simple, zero-configuration Ethereum Name Service resolver.",
+	"version": "1.0.4",
+	"description": "Simple, zero configuration Ethereum Name Service resolver.",
 	"main": "src/index.js",
 	"repository": {
 		"type": "git",

@@ -18,7 +18,7 @@ const ens = require('ez-ens');
 // Resolve 'ethereum.eth' on the mainnet.
 await ens.resolve('ethereum.eth') // '0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359'
 // Resolve 'ethereum.eth' on ropsten.
-await ens.resolve('ethereum.eth', {network: ropsten});
+await ens.resolve('ethereum.eth', {network: 'ropsten'});
 // Resolve 'ethereum.eth' using the provider at http://localhost:8545.
 await ens.resolve('ethereum.eth', {providerURI: 'http://localhost:8545'});
 // Resolve 'ethereum.eth' using an existing web3 instance (lower overhead).
