@@ -1,14 +1,14 @@
 {
 	"name": "ez-ens",
-	"version": "1.0.4",
+	"version": "1.0.5",
 	"description": "Simple, zero configuration Ethereum Name Service resolver.",
 	"main": "src/index.js",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cluracan/ez-ens.git"
+		"url": "https://github.com/merklejerk/ez-ens.git"
 	},
 	"bugs": {
-		"url": "https://github.com/cluracan/ez-ens/issues"
+		"url": "https://github.com/merklejerk/ez-ens/issues"
 	},
 	"author": "Lawrence Forman <not.larry@klv.io>",
 	"license": "Apache-2.0",
