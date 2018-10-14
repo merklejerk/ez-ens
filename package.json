@@ -1,6 +1,6 @@
 {
 	"name": "ez-ens",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"description": "Simple, zero configuration Ethereum Name Service resolver.",
 	"main": "src/index.js",
 	"repository": {
@@ -10,7 +10,7 @@
 	"bugs": {
 		"url": "https://github.com/merklejerk/ez-ens/issues"
 	},
-	"author": "Lawrence Forman <not.larry@klv.io>",
+	"author": "Lawrence Forman <me@merklejerk.com>",
 	"license": "Apache-2.0",
 	"dependencies": {
 		"create-web3-provider": "^1.0.0",
