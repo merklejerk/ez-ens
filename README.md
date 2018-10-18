@@ -29,7 +29,7 @@ await ens.resolve('ethereum.eth', {block: 3013041});
 await ens.resolve('ethereum.eth', {ttl: 3000});
 
 // Full resolve() options.
-ens.resolve({
+ens.resolve(ENS_ADDRESS, {
 	// Manually specify how long, in ms, to keep the record in the cache.
 	// If not set, the TTL specified by the registrar will be used.
 	ttl: Number,
