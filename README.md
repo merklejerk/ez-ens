@@ -46,7 +46,7 @@ ens.resolve(ENS_ADDRESS, {
 	provider: Object,
 	// Custom Web3 instance to use. Lightest option if making lots of calls.
 	web3: Object,
-	// Custom infura API key, if not using a custom provider URI or provider.
+	// Infura project ID, if not using a custom provider.
 	infuraKey: String
 });
 ```

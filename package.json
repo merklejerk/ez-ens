@@ -13,7 +13,7 @@
 	"author": "Lawrence Forman <me@merklejerk.com>",
 	"license": "Apache-2.0",
 	"dependencies": {
-		"create-web3-provider": "^1.0.0",
+		"create-web3-provider": "^1.4.1",
 		"ethereumjs-util": "^5.2.0",
 		"lodash": "^4.17.10",
 		"web3": "^1.0.0-beta.34"
