@@ -1,6 +1,7 @@
 'use strict'
 const _ = require('lodash');
 const ethjs = require('ethereumjs-util');
+const hashObject = require('object-hash');
 const Web3 = require('web3');
 const createWeb3Provider = require('create-web3-provider');
 const ENS_ADDRESSES = {
@@ -11,6 +12,8 @@ const ENS_ADDRESSES = {
 const RESOLVER_FN_SIG = '0x0178b8bf';
 const ADDR_FN_SIG = '0x3b3b57de';
 const TTL_FN_SIG = '0x16a25cbd';
+
+const WEB3_CACHE = {};
 
 module.exports = {
 	resolve: resolve,
@@ -23,19 +26,25 @@ module.exports = {
 function getWeb3(opts={}) {
 	if (opts.web3)
 		return opts.web3;
+	// Try to reuse an existing web3 instance, if possible.
+	const key = hashObject(opts);
+	if (key in WEB3_CACHE)
+		return WEB3_CACHE[key];
 	const provider = opts.provider || createWeb3Provider({
 		uri: opts.providerURI,
 		network: opts.network,
 		infuraKey: opts.infuraKey,
 		net: opts.net
 	});
-	return new Web3(provider);
+	console.log('creating web3...');
+	const inst = new Web3(provider);
+	return WEB3_CACHE[key] = inst;
 }
 
 async function resolve(name, opts={}) {
 	if (ethjs.isValidAddress(name))
 		return ethjs.toChecksumAddress(name);
-		
+
 	const web3 = getWeb3(opts)
 	const node = hash(name);
 	const chainId = await web3.eth.net.getId();
