@@ -20,66 +20,94 @@ module.exports = {
 	hash: hash,
 	cache: {},
 	minTTL: 60 * 60 * 1000,
-	maxTTL: 0xffffffffffffffff
+	maxTTL: Number.MAX_SAFE_INTEGER
 };
 
 function getWeb3(opts={}) {
-	if (opts.web3)
+	if (opts.web3) {
 		return opts.web3;
+	}
 	// Try to reuse an existing web3 instance, if possible.
 	const key = hashObject(opts);
-	if (key in WEB3_CACHE)
+	if (key in WEB3_CACHE) {
 		return WEB3_CACHE[key];
+	}
 	const provider = opts.provider || createWeb3Provider({
 		uri: opts.providerURI,
 		network: opts.network,
 		infuraKey: opts.infuraKey,
 		net: opts.net
 	});
-	console.log('creating web3...');
 	const inst = new Web3(provider);
 	return WEB3_CACHE[key] = inst;
 }
 
 async function resolve(name, opts={}) {
-	if (ethjs.isValidAddress(name))
+	name = name.toLowerCase();
+	if (ethjs.isValidAddress(name)) {
 		return ethjs.toChecksumAddress(name);
-
+	}
 	const web3 = getWeb3(opts)
 	const node = hash(name);
 	const chainId = await web3.eth.net.getId();
-	if (!(chainId in ENS_ADDRESSES))
+	if (!(chainId in ENS_ADDRESSES)) {
 		throw new Error(`ENS is not supported on network id ${chainId}`);
+	}
 	// Try the cache first.
 	const cached = _.get(module.exports.cache, [_.toString(chainId), node]);
-	if (cached && cached.expires > _.now())
+	if (cached && cached.expires > _.now()) {
 		return cached.address;
+	}
 
 	const ens = ENS_ADDRESSES[chainId];
-	const resolver = extractBytes(await call(web3, ens,
+	const resolver = extractBytes(
+		await call(
+			web3,
+			ens,
 			encodeCallData(RESOLVER_FN_SIG, node),
-		opts.block), 20);
-	if (/^0x0+$/.test(resolver) || !ethjs.isValidAddress(resolver))
+			opts.block
+		),
+		20
+	);
+	if (/^0x0+$/.test(resolver) || !ethjs.isValidAddress(resolver)) {
 		throw new Error(`No resolver for ENS address: '${name}'`);
-	let addr = extractBytes(await call(web3, resolver,
+	}
+	let addr = extractBytes(
+		await call(
+			web3,
+			resolver,
 			encodeCallData(ADDR_FN_SIG, node),
-		opts.block), 20);
-	if (!ethjs.isValidAddress(addr))
+			opts.block),
+		20
+	);
+	if (!ethjs.isValidAddress(addr)) {
 		throw new Error(`Failed to resolve ENS address: '${name}'`);
-	 addr = ethjs.toChecksumAddress(addr);
+	}
+	addr = ethjs.toChecksumAddress(addr);
 	// Get the TTL.
 	let ttl = opts.ttl;
 	if (!_.isNumber(ttl)) {
-		ttl = extractBytes(await call(web3, ens,
-			encodeCallData(TTL_FN_SIG, node),
-			opts.block), 8);
-		ttl = _.clamp(parseInt(ttl.substr(2), 16) * 1000,
-			module.exports.minTTL, module.exports.maxTTL);
+		ttl = extractBytes(
+			await call(
+				web3,
+				ens,
+				encodeCallData(TTL_FN_SIG, node),
+				opts.block),
+			8
+		);
+		ttl = _.clamp(
+			parseInt(ttl.substr(2), 16) * 1000,
+			module.exports.minTTL,
+			module.exports.maxTTL
+		);
 	}
 	// Cache it.
 	if (ttl > 0 && !opts.block) {
-		_.set(module.exports.cache, [_.toString(chainId), node],
-			{address: addr, expires: _.now() + ttl});
+		_.set(
+			module.exports.cache,
+			[_.toString(chainId), node],
+			{address: addr, expires: _.now() + ttl}
+		);
 	}
 	return addr;
 }
@@ -102,8 +130,9 @@ function call(web3, contract, data, block) {
 }
 
 function hash(name) {
-	if (!_.isString(name))
+	if (!_.isString(name)) {
 		throw new Error('ENS name must be a string');
+	}
 	let hb = Buffer.alloc(32);
 	const labels = _.reverse(_.filter(name.split('.')));
 	for (let label of labels) {
