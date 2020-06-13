@@ -51,6 +51,14 @@ ens.resolve(ENS_ADDRESS, {
 });
 ```
 
+## Resolver EIP support
+ENS resolvers may implement [extension EIPs](https://docs.ens.domains/contract-api-reference/publicresolver), a few of which can be accessed through the following functions:
+
+- `ens.getTextRecord(name, key)`: [EIP-634](https://eips.ethereum.org/EIPS/eip-634) Text records.
+- `ens.getContentHash(name)`: [EIP-1577](https://eips.ethereum.org/EIPS/eip-1577) IPFS content hashes.
+- `ens.getBlockchainAddress(name)`: [EIP-2304](https://eips.ethereum.org/EIPS/eip-2304) Cross-blockchain support.
+- `ens.getCanonicalName(name)`: [EIP-181](https://eips.ethereum.org/EIPS/eip-181) Reverse resolution.
+
 ## Minimum ENS cache duration
 Once an address is resolved, the address will be cached for future calls.
 Each address record has a TTL, or time-to-live, defined, which specifies how long

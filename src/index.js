@@ -4,6 +4,8 @@ const ethjs = require('ethereumjs-util');
 const hashObject = require('object-hash');
 const Web3 = require('web3');
 const createWeb3Provider = require('create-web3-provider');
+const { ENS_ABI, RESOLVER_ABI } = require('./abis');
+
 const ENS_ADDRESSES = {
 	'1': '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
 	'3': '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
@@ -11,15 +13,16 @@ const ENS_ADDRESSES = {
 	'42': '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
 	'6824': '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
 };
-const RESOLVER_FN_SIG = '0x0178b8bf';
-const ADDR_FN_SIG = '0x3b3b57de';
-const TTL_FN_SIG = '0x16a25cbd';
 const WEB3_CACHE = {};
+const NULL_ADDRESS = ethjs.bufferToHex(Buffer.alloc(20));
 
 module.exports = {
-	resolve: resolve,
-	hash: hash,
-	cache: {},
+	resolve,
+	nameToNode,
+	getTextRecord,
+	getBlockchainAddress,
+	getContentHash,
+	getCanonicalName,
 	minTTL: 60 * 60 * 1000,
 	maxTTL: Number.MAX_SAFE_INTEGER
 };
@@ -43,94 +46,119 @@ function getWeb3(opts={}) {
 	return WEB3_CACHE[key] = inst;
 }
 
-async function resolve(name, opts={}) {
-	name = name.toLowerCase();
-	if (ethjs.isValidAddress(name)) {
-		return ethjs.toChecksumAddress(name);
+async function queryRegistry(name, opts, cache, cachePath, queryResolver) {
+	const web3 = getWeb3(opts);
+	const chainId = await web3.eth.getChainId();
+	const node = nameToNode(name);
+	cachePath = [chainId, node, ...cachePath];
+
+	const cached = getCachedValue(cache, cachePath);
+	if (cached) {
+		return cached.value;
 	}
-	const web3 = getWeb3(opts)
-	const node = hash(name);
-	const chainId = await web3.eth.net.getId();
+
 	if (!(chainId in ENS_ADDRESSES)) {
 		throw new Error(`ENS is not supported on network id ${chainId}`);
 	}
-	// Try the cache first.
-	const cached = _.get(module.exports.cache, [_.toString(chainId), node]);
-	if (cached && cached.expires > _.now()) {
-		return cached.address;
-	}
 
-	const ens = ENS_ADDRESSES[chainId];
-	const resolver = extractBytes(
-		await call(
-			web3,
-			ens,
-			encodeCallData(RESOLVER_FN_SIG, node),
-			opts.block
-		),
-		20
-	);
-	if (/^0x0+$/.test(resolver) || !ethjs.isValidAddress(resolver)) {
+	const ens = new web3.eth.Contract(ENS_ABI, ENS_ADDRESSES[chainId]);
+	const resolverAddress = await ens.methods.resolver(node).call({ block: opts.block });
+	if (resolverAddress === NULL_ADDRESS) {
 		throw new Error(`No resolver for ENS address: '${name}'`);
 	}
-	let addr = extractBytes(
-		await call(
-			web3,
-			resolver,
-			encodeCallData(ADDR_FN_SIG, node),
-			opts.block),
-		20
+
+	const value = await queryResolver(
+		node,
+		new web3.eth.Contract(RESOLVER_ABI, resolverAddress),
 	);
-	if (!ethjs.isValidAddress(addr)) {
-		throw new Error(`Failed to resolve ENS address: '${name}'`);
+
+	const ttl = _.clamp(
+		_.isNumber(opts.ttl) ? ttl : await ens.methods.ttl(node) * 1000,
+		module.exports.minTTL,
+		module.exports.maxTTL,
+	);
+
+	if (!opts.block) {
+		cacheValue(cache, cachePath, value, ttl);
 	}
-	addr = ethjs.toChecksumAddress(addr);
-	// Get the TTL.
-	let ttl = opts.ttl;
-	if (!_.isNumber(ttl)) {
-		ttl = extractBytes(
-			await call(
-				web3,
-				ens,
-				encodeCallData(TTL_FN_SIG, node),
-				opts.block),
-			8
-		);
-		ttl = _.clamp(
-			parseInt(ttl.substr(2), 16) * 1000,
-			module.exports.minTTL,
-			module.exports.maxTTL
-		);
+	return value;
+}
+
+function getCachedValue(cache, cachePath) {
+	const cached = _.get(cache, cachePath);
+	if (cached && cached.expires > _.now()) {
+		return cached.value;
 	}
-	// Cache it.
-	if (ttl > 0 && !opts.block) {
+}
+
+function cacheValue(cache, cachePath, value, ttl) {
+	if (ttl > 0) {
 		_.set(
-			module.exports.cache,
-			[_.toString(chainId), node],
-			{address: addr, expires: _.now() + ttl}
+			cache,
+			cachePath,
+			{ value: value, expires: _.now() + ttl },
 		);
 	}
-	return addr;
 }
 
-function extractBytes(raw, size) {
-	return '0x'+raw.substr(raw.length-size*2);
+async function resolve(name, opts={}) {
+	if (/^0x[a-f0-9]+$/i.test(name) && ethjs.isValidAddress(name)) {
+		return ethjs.toChecksumAddress(name);
+	}
+
+	return queryRegistry(name, opts, resolve.cache, [], async (node, resolver) => {
+		return resolver.methods.addr(node).call({ block: opts.block });
+	});
 }
 
-function encodeCallData(sig, arg) {
-	return sig + arg.substr(2);
+async function getTextRecord(name, key, opts={}) {
+	return queryRegistry(name, opts, getTextRecord.cache, [key], async (node, resolver) => {
+		const isSupported =
+			await resolver.methods.supportsInterface('0x59d1d43c').call({ block: opts.block });
+		if (!isSupported) {
+			throw new Error(`Resolver for ${name} does not support text records.`);
+		}
+		return resolver.methods.text(node, key).call({ block: opts.block });
+	});
 }
 
-function call(web3, contract, data, block) {
-	const opts = {
-		data: data,
-		value: '0x0',
-		to: contract
-	};
-	return web3.eth.call(opts, block);
+async function getBlockchainAddress(name, coinType, opts={}) {
+	coinType = coinType.toString(10);
+
+	return queryRegistry(name, opts, getTextRecord.cache, [coinType], async (node, resolver) => {
+		const isSupported =
+			await resolver.methods.supportsInterface('0xf1cb7e06').call({ block: opts.block });
+		if (!isSupported) {
+			throw new Error(`Resolver for ${name} does not support blockchain addresses.`);
+		}
+		return resolver.methods.addr(node, coinType).call({ block: opts.block });
+	});
 }
 
-function hash(name) {
+async function getContentHash(name, opts={}) {
+	return queryRegistry(name, opts, getContentHash.cache, [], async (node, resolver) => {
+		const isSupported =
+			await resolver.methods.supportsInterface('0xbc1c58d1').call({ block: opts.block });
+		if (!isSupported) {
+			throw new Error(`Resolver for ${name} does not support content hashes.`);
+		}
+		return resolver.methods.contenthash(node).call({ block: opts.block });
+	});
+}
+
+async function getCanonicalName(name, opts={}) {
+	return queryRegistry(name, opts, getCanonicalName.cache, [], async (node, resolver) => {
+		const isSupported =
+			await resolver.methods.supportsInterface('0x691f3431').call({ block: opts.block });
+		if (!isSupported) {
+			throw new Error(`Resolver for ${name} does not support canonical names.`);
+		}
+		return resolver.methods.name(node).call({ block: opts.block });
+	});
+}
+
+function nameToNode(name) {
+	name = name.toLowerCase();
 	if (!_.isString(name)) {
 		throw new Error('ENS name must be a string');
 	}
@@ -140,5 +168,5 @@ function hash(name) {
 		const lh = ethjs.keccak256(Buffer.from(label));
 		hb = ethjs.keccak256(Buffer.concat([hb, lh]));
 	}
-	return '0x'+hb.toString('hex');
+	return '0x' + hb.toString('hex');
 }

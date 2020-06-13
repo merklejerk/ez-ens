@@ -1,6 +1,6 @@
 {
 	"name": "ez-ens",
-	"version": "1.2.0",
+	"version": "1.3.0",
 	"description": "Simple, zero configuration Ethereum Name Service resolver.",
 	"main": "src/index.js",
 	"repository": {
@@ -13,11 +13,11 @@
 	"author": "Lawrence Forman <me@merklejerk.com>",
 	"license": "Apache-2.0",
 	"dependencies": {
-		"create-web3-provider": "^1.4.1",
-		"ethereumjs-util": "^6.1.0",
-		"lodash": "^4.17.11",
+		"create-web3-provider": "^1.6.1",
+		"ethereumjs-util": "^7.0.2",
+		"lodash": "^4.17.15",
 		"object-hash": "^1.3.1",
-		"web3": "1.0.0-beta.37 || 1.0.0-beta.42 - 1.0.0-beta.1024"
+		"web3": "^1.2.9"
 	},
 	"keywords": [
 		"ethereum",
